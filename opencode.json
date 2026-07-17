@@ -1,0 +1,10 @@
+{
+  "$schema": "https://app.kilo.ai/config.json",
+  "command": {
+    "dev-flow": {
+      "agent": "code",
+      "description": "Multi-agent dev loop — code implements, debug reviews. Max 3 rounds.",
+      "prompt": "Loop until approved (max 3 rounds):\n\n1. Round 1: task agent `code` → $ARGUMENTS\n2. After code: task agent `debug` → \"Review changes. Reply: `PASS: <commit-msg>` or `FAIL: <issues>`. Add ` |END` if no more work.\"\n3. FAIL → next round: task agent `code` → \"Fix: <debug feedback>\"\n4. PASS |END → stop. PASS → commit with the suggested message.\n\nAll task prompts ≤4 sentences. Reference files by path."
+    }
+  }
+}

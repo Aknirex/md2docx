@@ -1,0 +1,13 @@
+{
+  "$schema": "https://app.kilo.ai/config.json",
+  "agent": {
+    "code": {
+      "model": "openai/gpt-5.6-terra",
+      "variant": "medium"
+    },
+    "debug": {
+      "model": "deepseek/deepseek-v4-pro",
+      "variant": "max"
+    }
+  }
+}
