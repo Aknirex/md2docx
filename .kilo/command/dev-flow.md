@@ -1,13 +1,20 @@
 ---
-description: Multi-agent dev loop — code implements, debug reviews. Max 3 rounds.
-agent: code
+description: Multi-agent dev loop — code-impl designs/implements, debug-review reviews/tests/commits. Max 3 rounds.
 ---
 
-Loop until approved (max 3 rounds):
+Execute a dev loop using only the `code-impl` and `debug-review` subagents. Max 3 rounds.
 
-1. Round 1: task agent `code` → $ARGUMENTS
-2. Every round after code: task agent `debug` → "Review changes. Reply with one line: `PASS: <commit-msg>` or `FAIL: <issues>`. Add ` |END` if no more work needed."
-3. If FAIL → next round: task agent `code` → "Fix: <debug feedback>"
-4. If PASS |END → stop. If PASS → commit with the suggested message.
+**Round 1**
+1. Task `code-impl`: $ARGUMENTS
+2. Task `debug-review`: Review all uncommitted changes and run tests.
 
-All task prompts ≤4 sentences. Reference files by path.
+**Round 2+ (only if debug-review returned FAIL)**
+1. Task `code-impl`: Fix these issues: <exact debug-review FAIL text>
+2. Task `debug-review`: Re-review all uncommitted changes and run tests.
+
+**Outcome**
+- `debug-review` commits on PASS — do nothing, it already committed.
+- If result line contains `|END` → stop the workflow.
+- If PASS without `|END` → report "Ready for next task" to the user.
+
+Keep each task prompt ≤4 sentences. Reference files by path, never paste content.
