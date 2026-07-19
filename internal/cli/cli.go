@@ -7,33 +7,33 @@ import (
 	"path/filepath"
 
 	"github.com/md2docx/cli/internal/converter"
+	"github.com/md2docx/cli/internal/i18n"
 	"github.com/md2docx/cli/internal/style"
 )
 
-// AgentOutput is structured output for agent consumption.
 type AgentOutput struct {
-	Success    bool                      `json:"success"`
-	OutputPath string                    `json:"outputPath,omitempty"`
-	Bytes      int64                     `json:"bytes,omitempty"`
-	Error      string                    `json:"error,omitempty"`
-	Style      *converter.StyleTemplate  `json:"style,omitempty"`
-	Presets    []string                  `json:"presets,omitempty"`
+	Success    bool                     `json:"success"`
+	OutputPath string                   `json:"outputPath,omitempty"`
+	Bytes      int64                    `json:"bytes,omitempty"`
+	Error      string                   `json:"error,omitempty"`
+	Style      *converter.StyleTemplate `json:"style,omitempty"`
+	Presets    []string                 `json:"presets,omitempty"`
 }
 
-// ConvertOptions holds optional settings for the convert command.
 type ConvertOptions struct {
 	InputPath     string
 	OutputPath    string
 	StyleRef      string
 	PlainOutput   bool
-	Mermaid       bool   // enable mermaid rendering
-	MermaidServer string // custom mermaid.ink server URL
-	MermaidTheme  string // mermaid theme (default, neutral, dark, forest)
+	Mermaid       bool
+	MermaidServer string
+	MermaidTheme  string
+	Lang          i18n.Lang
 }
 
-// Convert converts markdown to DOCX and prints structured JSON output.
 func Convert(opts ConvertOptions) {
 	var result AgentOutput
+	t := func(k string) string { return i18n.T(opts.Lang, k) }
 
 	if filepath.Ext(opts.OutputPath) != ".docx" {
 		opts.OutputPath += ".docx"
@@ -41,20 +41,18 @@ func Convert(opts ConvertOptions) {
 
 	var convertOpts []converter.ConversionOption
 	if opts.Mermaid {
-		renderer := &converter.MermaidInkRenderer{
-			Theme: opts.MermaidTheme,
-		}
+		r := &converter.MermaidInkRenderer{Theme: opts.MermaidTheme}
 		if opts.MermaidServer != "" {
-			renderer.BaseURL = opts.MermaidServer
+			r.BaseURL = opts.MermaidServer
 		}
-		convertOpts = append(convertOpts, converter.WithMermaid(renderer))
+		convertOpts = append(convertOpts, converter.WithMermaid(r))
 	}
 
 	cr, err := style.ResolveAndConvertWithOptions(opts.InputPath, opts.OutputPath, opts.StyleRef, convertOpts...)
 	if err != nil {
 		result.Success = false
 		result.Error = err.Error()
-		printResult(result, opts.PlainOutput)
+		printResult(result, opts.PlainOutput, t)
 		os.Exit(1)
 		return
 	}
@@ -62,34 +60,30 @@ func Convert(opts ConvertOptions) {
 	result.Success = true
 	result.OutputPath = cr.OutputPath
 	result.Bytes = cr.Bytes
-	printResult(result, opts.PlainOutput)
+	printResult(result, opts.PlainOutput, t)
 }
 
-// ListPresets prints all available built-in style presets.
-func ListPresets(plainOutput bool) {
+func ListPresets(plainOutput bool, lang i18n.Lang) {
+	t := func(k string) string { return i18n.T(lang, k) }
 	names := style.AllPresetNames()
-	descs := style.PresetDescriptions()
 
 	if plainOutput {
 		for _, name := range names {
-			fmt.Printf("%-20s %s\n", name, descs[name])
+			fmt.Printf("%-20s %s\n", name, i18n.PresetDescription(lang, name))
 		}
 		return
 	}
 
-	result := AgentOutput{
-		Success: true,
-		Presets: names,
-	}
-	printResult(result, false)
+	result := AgentOutput{Success: true, Presets: names}
+	printResult(result, false, t)
 }
 
-// ShowPreset displays the details of a specific preset.
-func ShowPreset(name string, plainOutput bool) {
+func ShowPreset(name string, plainOutput bool, lang i18n.Lang) {
+	t := func(k string) string { return i18n.T(lang, k) }
 	st, err := style.LoadPreset(name)
 	if err != nil {
 		result := AgentOutput{Success: false, Error: err.Error()}
-		printResult(result, plainOutput)
+		printResult(result, plainOutput, t)
 		os.Exit(1)
 		return
 	}
@@ -107,44 +101,44 @@ func ShowPreset(name string, plainOutput bool) {
 	}
 
 	result := AgentOutput{Success: true, Style: st}
-	printResult(result, false)
+	printResult(result, false, t)
 }
 
-// CreateTemplate creates a new style template JSON file from a preset.
-func CreateTemplate(outputPath, presetName string, plainOutput bool) {
+func CreateTemplate(outputPath, presetName string, plainOutput bool, lang i18n.Lang) {
+	t := func(k string) string { return i18n.T(lang, k) }
 	st, err := style.LoadPresetOrDefault(presetName)
 	if err != nil {
 		result := AgentOutput{Success: false, Error: err.Error()}
-		printResult(result, plainOutput)
+		printResult(result, plainOutput, t)
 		os.Exit(1)
 		return
 	}
 
 	if err := style.SaveTemplateFile(outputPath, st); err != nil {
 		result := AgentOutput{Success: false, Error: err.Error()}
-		printResult(result, plainOutput)
+		printResult(result, plainOutput, t)
 		os.Exit(1)
 		return
 	}
 
 	if plainOutput {
-		fmt.Printf("Style template created: %s\n", outputPath)
+		fmt.Printf("%s: %s\n", t("cli_template_created"), outputPath)
 	} else {
 		result := AgentOutput{Success: true, OutputPath: outputPath}
-		printResult(result, false)
+		printResult(result, false, t)
 	}
 }
 
-func printResult(result AgentOutput, plain bool) {
+func printResult(result AgentOutput, plain bool, t func(string) string) {
 	if plain {
 		if result.Success {
 			if result.OutputPath != "" {
-				fmt.Printf("OK: %s (%d bytes)\n", result.OutputPath, result.Bytes)
+				fmt.Printf("%s: %s (%d %s)\n", t("cli_ok"), result.OutputPath, result.Bytes, t("cli_bytes"))
 			} else if result.Style != nil {
-				fmt.Printf("OK\n")
+				fmt.Printf("%s\n", t("cli_ok"))
 			}
 		} else {
-			fmt.Fprintf(os.Stderr, "ERROR: %s\n", result.Error)
+			fmt.Fprintf(os.Stderr, "%s: %s\n", t("cli_error"), result.Error)
 		}
 		return
 	}
