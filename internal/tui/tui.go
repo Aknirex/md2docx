@@ -156,7 +156,25 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 		if msg.String() == "esc" {
-			return m.handleEsc(), nil
+			// Esc goes back one step, or quits from the first step
+			switch m.step {
+			case stepSelectLang, stepSelectInput:
+				return m, tea.Quit
+			case stepSelectOutput:
+				m.step = stepSelectInput
+				return m, nil
+			case stepSelectStyle, stepSelectStyleFile:
+				m.step = stepSelectOutput
+				return m, nil
+			case stepConfirm:
+				m.step = stepSelectStyle
+				return m, nil
+			case stepConverting:
+				if m.done {
+					return m, tea.Quit
+				}
+			}
+			return m, nil
 		}
 
 		switch m.step {
@@ -198,22 +216,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	return m, nil
-}
-
-func (m Model) handleEsc() tea.Msg {
-	switch m.step {
-	case stepSelectLang:
-		return tea.Quit() // can't go back from lang selection
-	case stepSelectInput:
-		return tea.Quit()
-	case stepSelectOutput:
-		m.step = stepSelectInput
-	case stepSelectStyle, stepSelectStyleFile:
-		m.step = stepSelectOutput
-	case stepConfirm:
-		m.step = stepSelectStyle
-	}
-	return nil
 }
 
 // ---- Language selection ----
@@ -354,15 +356,15 @@ func (m *Model) goToConfirm() {
 	}
 	m.step = stepConfirm
 	m.confirmItems = []string{
-		t("tui_confirm_input") + ":  " + m.inputPath,
-		t("tui_confirm_output") + ": " + m.outputPath,
-		t("tui_confirm_style") + ":  " + m.styleSourceStr,
+		fmt.Sprintf("%s:  %s", t("tui_confirm_input"), m.inputPath),
+		fmt.Sprintf("%s: %s", t("tui_confirm_output"), m.outputPath),
+		fmt.Sprintf("%s:  %s", t("tui_confirm_style"), m.styleSourceStr),
 		mermaidTxt,
 		"",
 		"> " + t("tui_confirm_convert"),
 		"  " + t("tui_confirm_back"),
 	}
-	m.confirmCursor = 5
+	m.confirmCursor = 4 // "Convert"
 }
 
 func (m Model) updateConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
@@ -378,15 +380,16 @@ func (m Model) updateConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 	case " ", "enter":
 		if m.confirmCursor == 3 {
+			// Toggle mermaid
 			m.useMermaid = !m.useMermaid
 			txt := "[ ] " + t("tui_confirm_mermaid")
 			if m.useMermaid {
 				txt = "[x] " + t("tui_confirm_mermaid")
 			}
 			m.confirmItems[3] = txt
-		} else if m.confirmCursor == 5 {
-			return m.startConversion()
 		} else if m.confirmCursor == 4 {
+			return m.startConversion()
+		} else if m.confirmCursor == 5 {
 			m.step = stepSelectStyle
 			m.confirmCursor = 0
 		}
@@ -508,8 +511,11 @@ func (m Model) viewConfirm() string {
 	var b strings.Builder
 	b.WriteString(titleStyle.Render(t("tui_confirm_title")))
 	b.WriteString("\n\n")
+
 	for i, item := range m.confirmItems {
-		if i < 4 {
+		switch {
+		case i < 3:
+			// Info lines: Input, Output, Style
 			parts := strings.SplitN(item, ":", 2)
 			if len(parts) == 2 {
 				b.WriteString(labelStyle.Render(parts[0]+": "))
@@ -518,16 +524,25 @@ func (m Model) viewConfirm() string {
 			} else {
 				b.WriteString(item + "\n")
 			}
-		} else if item == "" {
-			b.WriteString("\n")
-		} else {
+		case i == 3:
+			// Mermaid toggle (selectable)
 			cursor := "  "
 			if i == m.confirmCursor {
+				cursor = "> "
+			}
+			b.WriteString(fmt.Sprintf("%s%s\n", cursor, item))
+		case item == "":
+			b.WriteString("\n")
+		default:
+			// Action buttons: Convert, Back
+			cursor := "  "
+			if i == m.confirmCursor+1 { // +1 offset for the empty separator
 				cursor = "> "
 			}
 			b.WriteString(fmt.Sprintf("%s%s\n", cursor, strings.TrimSpace(item)))
 		}
 	}
+
 	b.WriteString("\n")
 	b.WriteString(helpStyle.Render(t("tui_nav_help")))
 	return b.String()

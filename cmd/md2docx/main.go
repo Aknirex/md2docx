@@ -37,9 +37,19 @@ Run without subcommands to launch the interactive TUI.
 Use --lang to set the interface language (en, zh-CN, ja, ko, es, pt-BR, de, fr).
 The language is saved and remembered across sessions.`,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			// If --lang was explicitly set, save it
 			if cmd.Flags().Changed("lang") {
-				if _, err := config.SetLanguage(i18n.Lang(langFlag)); err != nil {
+				l := i18n.Lang(langFlag)
+				valid := false
+				for _, vl := range i18n.AllLangs() {
+					if l == vl {
+						valid = true
+						break
+					}
+				}
+				if !valid {
+					return fmt.Errorf("unsupported language: %q (valid: %v)", langFlag, i18n.AllLangs())
+				}
+				if _, err := config.SetLanguage(l); err != nil {
 					return err
 				}
 			}
