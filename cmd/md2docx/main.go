@@ -31,9 +31,9 @@ func main() {
 No Word, Pandoc, or LibreOffice required.
 
 Built-in style presets for US, CN, JP, EU, and KR document standards.
+Supports rendering Mermaid diagrams as embedded PNG images.
 Run without subcommands to launch the interactive TUI.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			// No subcommand → launch TUI
 			runTUI()
 		},
 	}
@@ -47,16 +47,22 @@ Run without subcommands to launch the interactive TUI.`,
 Style can be a built-in preset name (e.g., cn-official, us-business)
 or a path to a JSON style template file.
 
+Mermaid code blocks (~~~mermaid) are rendered as embedded PNG images
+when --mermaid is enabled. Uses the public mermaid.ink service by default.
+
 Examples:
   md2docx convert -i notes.md -o notes.docx
-  md2docx convert -i report.md -o report.docx -s cn-official
-  md2docx convert -i doc.md -o doc.docx -s my-style.json`,
+  md2docx convert -i report.md -o report.docx -s cn-official --mermaid
+  md2docx convert -i doc.md -o doc.docx -s my-style.json --mermaid --mermaid-theme dark`,
 		Run: runConvert,
 	}
 	convertCmd.Flags().StringP("input", "i", "", "Input Markdown file (required)")
 	convertCmd.Flags().StringP("output", "o", "", "Output DOCX file (required)")
 	convertCmd.Flags().StringP("style", "s", "", "Style preset name or template JSON path")
 	convertCmd.Flags().BoolVar(&jsonOutput, "json", false, "Output structured JSON (for agent/automation)")
+	convertCmd.Flags().Bool("mermaid", false, "Render mermaid code blocks as embedded diagrams (via mermaid.ink)")
+	convertCmd.Flags().String("mermaid-server", "", "Custom mermaid.ink server URL (default: https://mermaid.ink)")
+	convertCmd.Flags().String("mermaid-theme", "default", "Mermaid theme: default, neutral, dark, forest")
 	convertCmd.MarkFlagRequired("input")
 	convertCmd.MarkFlagRequired("output")
 
@@ -156,8 +162,19 @@ func runConvert(cmd *cobra.Command, args []string) {
 	input, _ := cmd.Flags().GetString("input")
 	output, _ := cmd.Flags().GetString("output")
 	styleRef, _ := cmd.Flags().GetString("style")
+	mermaid, _ := cmd.Flags().GetBool("mermaid")
+	mermaidServer, _ := cmd.Flags().GetString("mermaid-server")
+	mermaidTheme, _ := cmd.Flags().GetString("mermaid-theme")
 
-	cli.Convert(input, output, styleRef, !jsonOutput)
+	cli.Convert(cli.ConvertOptions{
+		InputPath:     input,
+		OutputPath:    output,
+		StyleRef:      styleRef,
+		PlainOutput:   !jsonOutput,
+		Mermaid:       mermaid,
+		MermaidServer: mermaidServer,
+		MermaidTheme:  mermaidTheme,
+	})
 }
 
 func runPresets(cmd *cobra.Command, args []string) {

@@ -43,6 +43,10 @@ md2docx template create -o my-style.json -s jp-formal
 
 # Convert with a custom template
 md2docx convert -i doc.md -o doc.docx -s my-style.json --json
+
+# Convert with Mermaid diagrams rendered as embedded PNG images
+md2docx convert -i doc.md -o doc.docx --mermaid --json
+md2docx convert -i doc.md -o doc.docx --mermaid --mermaid-theme dark --json
 ```
 
 The `--json` flag produces structured JSON suitable for agent consumption:
@@ -142,6 +146,26 @@ md2docx template create -o my-style.json -s default
 - Blockquotes (`>`)
 - Fenced code blocks (` ``` `)
 - **Bold**, *italic*, `inline code`
+
+## Mermaid Diagram Rendering
+
+Mermaid code blocks are rendered as embedded PNG images when `--mermaid` is enabled:
+
+````markdown
+```mermaid
+graph TD
+    A[Start] --> B{Decision}
+    B -->|Yes| C[Do this]
+    B -->|No| D[Do that]
+```
+````
+
+Uses [mermaid.ink](https://mermaid.ink) by default (public, free API). Configure with:
+- `--mermaid` — enable Mermaid rendering
+- `--mermaid-theme` — `default`, `neutral`, `dark`, or `forest`
+- `--mermaid-server` — custom self-hosted mermaid.ink instance
+
+In the TUI, toggle Mermaid rendering on the confirm screen.
 
 ## Build from Source
 

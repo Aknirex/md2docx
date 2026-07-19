@@ -11,6 +11,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
+	"github.com/md2docx/cli/internal/converter"
 	"github.com/md2docx/cli/internal/style"
 )
 
@@ -70,6 +71,9 @@ type Model struct {
 	styleCursor    int
 	styleSource    string // "preset:<name>" or "file:<path>"
 	styleSourceStr string
+
+	// Mermaid
+	useMermaid bool
 
 	// Confirm
 	confirmCursor int
@@ -282,15 +286,20 @@ func (m Model) updateStepStyleFile(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 func (m *Model) goToConfirm() {
 	m.step = stepConfirm
+	mermaidStatus := "[ ] Render mermaid diagrams"
+	if m.useMermaid {
+		mermaidStatus = "[x] Render mermaid diagrams"
+	}
 	m.confirmItems = []string{
-		fmt.Sprintf("Input:  %s", m.inputPath),
-		fmt.Sprintf("Output: %s", m.outputPath),
-		fmt.Sprintf("Style:  %s", m.styleSourceStr),
+		fmt.Sprintf("Input:   %s", m.inputPath),
+		fmt.Sprintf("Output:  %s", m.outputPath),
+		fmt.Sprintf("Style:   %s", m.styleSourceStr),
+		mermaidStatus,
 		"",
 		"> Convert",
 		"  Back",
 	}
-	m.confirmCursor = 3 // "Convert"
+	m.confirmCursor = 5 // "Convert"
 }
 
 func (m Model) updateStepConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
@@ -300,15 +309,24 @@ func (m Model) updateStepConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.confirmCursor--
 		}
 	case "down", "j":
-		if m.confirmCursor < 4 {
+		if m.confirmCursor < 5 {
 			m.confirmCursor++
 		}
-	case "enter":
+	case " ", "enter":
 		if m.confirmCursor == 3 {
+			// Toggle mermaid
+			m.useMermaid = !m.useMermaid
+			mermaidStatus := "[ ] Render mermaid diagrams"
+			if m.useMermaid {
+				mermaidStatus = "[x] Render mermaid diagrams"
+			}
+			m.confirmItems[3] = mermaidStatus
+		} else if m.confirmCursor == 5 {
 			return m.startConversion()
+		} else if m.confirmCursor == 4 {
+			m.step = stepSelectStyle
+			m.confirmCursor = 0
 		}
-		m.step = stepSelectStyle
-		m.confirmCursor = 0
 	}
 	return m, nil
 }
@@ -323,7 +341,14 @@ func (m Model) startConversion() (tea.Model, tea.Cmd) {
 		styleRef = strings.TrimPrefix(m.styleSource, "file:")
 	}
 
-	result, err := style.ResolveAndConvert(m.inputPath, m.outputPath, styleRef)
+	var convertOpts []converter.ConversionOption
+	if m.useMermaid {
+		convertOpts = append(convertOpts, converter.WithMermaid(&converter.MermaidInkRenderer{
+			Theme: "default",
+		}))
+	}
+
+	result, err := style.ResolveAndConvertWithOptions(m.inputPath, m.outputPath, styleRef, convertOpts...)
 	if err != nil {
 		m.err = err
 	} else {

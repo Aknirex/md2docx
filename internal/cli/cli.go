@@ -12,28 +12,49 @@ import (
 
 // AgentOutput is structured output for agent consumption.
 type AgentOutput struct {
-	Success    bool                    `json:"success"`
-	OutputPath string                  `json:"outputPath,omitempty"`
-	Bytes      int64                   `json:"bytes,omitempty"`
-	Error      string                  `json:"error,omitempty"`
-	Style      *converter.StyleTemplate `json:"style,omitempty"`
-	Presets    []string                `json:"presets,omitempty"`
+	Success    bool                      `json:"success"`
+	OutputPath string                    `json:"outputPath,omitempty"`
+	Bytes      int64                     `json:"bytes,omitempty"`
+	Error      string                    `json:"error,omitempty"`
+	Style      *converter.StyleTemplate  `json:"style,omitempty"`
+	Presets    []string                  `json:"presets,omitempty"`
+}
+
+// ConvertOptions holds optional settings for the convert command.
+type ConvertOptions struct {
+	InputPath     string
+	OutputPath    string
+	StyleRef      string
+	PlainOutput   bool
+	Mermaid       bool   // enable mermaid rendering
+	MermaidServer string // custom mermaid.ink server URL
+	MermaidTheme  string // mermaid theme (default, neutral, dark, forest)
 }
 
 // Convert converts markdown to DOCX and prints structured JSON output.
-func Convert(inputPath, outputPath, styleRef string, plainOutput bool) {
+func Convert(opts ConvertOptions) {
 	var result AgentOutput
 
-	// Ensure .docx extension
-	if filepath.Ext(outputPath) != ".docx" {
-		outputPath += ".docx"
+	if filepath.Ext(opts.OutputPath) != ".docx" {
+		opts.OutputPath += ".docx"
 	}
 
-	cr, err := style.ResolveAndConvert(inputPath, outputPath, styleRef)
+	var convertOpts []converter.ConversionOption
+	if opts.Mermaid {
+		renderer := &converter.MermaidInkRenderer{
+			Theme: opts.MermaidTheme,
+		}
+		if opts.MermaidServer != "" {
+			renderer.BaseURL = opts.MermaidServer
+		}
+		convertOpts = append(convertOpts, converter.WithMermaid(renderer))
+	}
+
+	cr, err := style.ResolveAndConvertWithOptions(opts.InputPath, opts.OutputPath, opts.StyleRef, convertOpts...)
 	if err != nil {
 		result.Success = false
 		result.Error = err.Error()
-		printResult(result, plainOutput)
+		printResult(result, opts.PlainOutput)
 		os.Exit(1)
 		return
 	}
@@ -41,7 +62,7 @@ func Convert(inputPath, outputPath, styleRef string, plainOutput bool) {
 	result.Success = true
 	result.OutputPath = cr.OutputPath
 	result.Bytes = cr.Bytes
-	printResult(result, plainOutput)
+	printResult(result, opts.PlainOutput)
 }
 
 // ListPresets prints all available built-in style presets.

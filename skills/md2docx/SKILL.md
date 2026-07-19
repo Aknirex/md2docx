@@ -49,6 +49,12 @@ md2docx convert -i input.md -o output.docx --json
 md2docx convert -i input.md -o output.docx -s cn-official --json
 ```
 
+### Convert with Mermaid diagrams rendered as images
+```bash
+md2docx convert -i input.md -o output.docx --mermaid --json
+md2docx convert -i input.md -o output.docx --mermaid --mermaid-theme dark --json
+```
+
 ### List available style presets
 ```bash
 md2docx presets --json
@@ -86,6 +92,7 @@ md2docx template create -o my-template.json -s cn-official --json
 ## Requirements
 
 - No external dependencies (no Word, Pandoc, or LibreOffice required)
+- Mermaid rendering uses the public mermaid.ink API (requires network access)
 - The binary is self-contained; just download and run
 
 ## Output Format (JSON)

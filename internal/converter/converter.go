@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -25,6 +26,9 @@ var blockquoteRE = regexp.MustCompile(`^>\s?(.*)$`)
 // codeFenceRE matches fenced code block markers.
 var codeFenceRE = regexp.MustCompile(`^\s*\x60{3,}`)
 
+// mermaidFenceRE matches ```mermaid (with optional whitespace after backticks).
+var mermaidFenceRE = regexp.MustCompile(`^\s*\x60{3,}\s*mermaid\s*$`)
+
 // inlineMarkupRE matches inline bold, italic, and code spans.
 var inlineMarkupRE = regexp.MustCompile(`(\*\*.+?\*\*|\x60[^\x60]+\x60|\*[^*\n]+\*|_[^_\n]+_)`)
 
@@ -40,6 +44,18 @@ var italicAsteriskRE = regexp.MustCompile(`^\*(.+?)\*$`)
 // italicUnderscoreRE matches _italic_
 var italicUnderscoreRE = regexp.MustCompile(`^_(.+?)_$`)
 
+// mermaidBlock holds a collected mermaid diagram.
+type mermaidBlock struct {
+	diagram string
+	index   int // position in the paragraph list where the placeholder goes
+}
+
+// parseResult holds the output of markdown parsing.
+type parseResult struct {
+	paragraphs    []string
+	mermaidBlocks []mermaidBlock
+}
+
 // convertInlineMarkdown parses inline markdown (bold, italic, code) into XML runs.
 func convertInlineMarkdown(text string, st *StyleTemplate) string {
 	var runs strings.Builder
@@ -47,7 +63,6 @@ func convertInlineMarkdown(text string, st *StyleTemplate) string {
 	pos := 0
 
 	for _, m := range matches {
-		// Add text before this match as a plain run
 		if m[0] > pos {
 			runs.WriteString(runXML(text[pos:m[0]], st.BodyFont, st.BodySize, st.TextColor, false, false, false))
 		}
@@ -69,7 +84,6 @@ func convertInlineMarkdown(text string, st *StyleTemplate) string {
 		pos = m[1]
 	}
 
-	// Remaining text
 	if pos < len(text) || runs.Len() == 0 {
 		runs.WriteString(runXML(text[pos:], st.BodyFont, st.BodySize, st.TextColor, false, false, false))
 	}
@@ -77,16 +91,50 @@ func convertInlineMarkdown(text string, st *StyleTemplate) string {
 	return runs.String()
 }
 
-// parseMarkdown converts markdown text into a list of paragraph XML strings.
-func parseMarkdown(markdown string, st *StyleTemplate) []string {
+// parseMarkdown converts markdown text into a list of paragraph XML strings
+// and collects mermaid diagram blocks.
+func parseMarkdown(markdown string, st *StyleTemplate, enableMermaid bool) *parseResult {
 	var paragraphs []string
+	var mermaidBlocks []mermaidBlock
 	inCodeBlock := false
+	inMermaidBlock := false
+	var mermaidBuf strings.Builder
 
 	scanner := bufio.NewScanner(strings.NewReader(markdown))
 	for scanner.Scan() {
 		line := scanner.Text()
 
-		// Handle fenced code blocks
+		// Inside a mermaid block: collect lines until closing fence
+		if inMermaidBlock {
+			if codeFenceRE.MatchString(line) {
+				// End of mermaid block
+				inMermaidBlock = false
+				diagram := strings.TrimSpace(mermaidBuf.String())
+				if diagram != "" {
+					// Insert a placeholder paragraph for this mermaid diagram
+					idx := len(paragraphs)
+					paragraphs = append(paragraphs, mermaidPlaceholder(idx))
+					mermaidBlocks = append(mermaidBlocks, mermaidBlock{
+						diagram: diagram,
+						index:   idx,
+					})
+				}
+				mermaidBuf.Reset()
+				continue
+			}
+			mermaidBuf.WriteString(line)
+			mermaidBuf.WriteString("\n")
+			continue
+		}
+
+		// Detect opening of a mermaid code block
+		if enableMermaid && mermaidFenceRE.MatchString(line) {
+			inMermaidBlock = true
+			mermaidBuf.Reset()
+			continue
+		}
+
+		// Handle regular fenced code blocks
 		if codeFenceRE.MatchString(line) {
 			inCodeBlock = !inCodeBlock
 			continue
@@ -146,39 +194,112 @@ func parseMarkdown(markdown string, st *StyleTemplate) []string {
 		}
 	}
 
-	return paragraphs
+	return &parseResult{
+		paragraphs:    paragraphs,
+		mermaidBlocks: mermaidBlocks,
+	}
 }
 
-// ConvertMarkdownToBytes converts markdown content to DOCX bytes using the given style.
-func ConvertMarkdownToBytes(markdown string, st *StyleTemplate) ([]byte, error) {
-	paragraphs := parseMarkdown(markdown, st)
+// resolveDefaultStyle returns a default style if nil is passed.
+func resolveDefaultStyle(st *StyleTemplate) *StyleTemplate {
+	if st == nil {
+		return &StyleTemplate{
+			TitleFont:        "Aptos Display",
+			TitleSize:        28,
+			HeadingFont:      "Aptos Display",
+			HeadingSize:      18,
+			BodyFont:         "Aptos",
+			BodySize:         11,
+			CodeFont:         "Cascadia Mono",
+			CodeSize:         10,
+			TextColor:        "#1F2937",
+			AccentColor:      "#2563EB",
+			PageMarginInches: 0.75,
+		}
+	}
+	return st
+}
+
+// ConvertMarkdownToBytes converts markdown content to DOCX bytes.
+// Use WithMermaid(r) to enable mermaid diagram rendering.
+func ConvertMarkdownToBytes(markdown string, st *StyleTemplate, opts ...ConversionOption) ([]byte, error) {
+	cfg := &conversionConfig{Style: resolveDefaultStyle(st)}
+	for _, opt := range opts {
+		opt(cfg)
+	}
+
+	enableMermaid := cfg.Mermaid != nil
+	result := parseMarkdown(markdown, cfg.Style, enableMermaid)
+
+	// Render mermaid diagrams if enabled
+	var mermaidImages []MermaidImage
+	if enableMermaid && len(result.mermaidBlocks) > 0 {
+		for i, block := range result.mermaidBlocks {
+			pngBytes, wPx, hPx, err := cfg.Mermaid.Render(block.diagram)
+			if err != nil {
+				// On render failure, fall back to rendering as a code block
+				// Replace placeholder with the mermaid source as code
+				continue
+			}
+			imageName := fmt.Sprintf("media/image%d.png", i+1)
+			mermaidImages = append(mermaidImages, MermaidImage{
+				Index:     block.index,
+				ImageName: imageName,
+				PNGBytes:  pngBytes,
+				WidthEMU:  pixelToEMU(wPx),
+				HeightEMU: pixelToEMU(hPx),
+			})
+		}
+	}
+
+	// For mermaid blocks that failed to render, replace placeholders with
+	// code paragraphs showing the original mermaid source
+	if len(result.mermaidBlocks) > 0 {
+		// Build a set of successfully rendered indices
+		rendered := make(map[int]bool)
+		for _, img := range mermaidImages {
+			rendered[img.Index] = true
+		}
+		// Replace failed placeholders with code paragraphs
+		for i, p := range result.paragraphs {
+			if strings.HasPrefix(p, "<w:p><!--MERMAID:") {
+				rest := strings.TrimPrefix(p, "<w:p><!--MERMAID:")
+				end := strings.Index(rest, "-->")
+				if end > 0 {
+					var idx int
+					fmt.Sscanf(rest[:end], "%d", &idx)
+					if !rendered[idx] {
+						// Find the original mermaid source
+						for _, block := range result.mermaidBlocks {
+							if block.index == idx {
+								// Render as a code block with language label
+								lines := strings.Split(strings.TrimSpace(block.diagram), "\n")
+								var codeParas []string
+								// Add a label line
+								codeParas = append(codeParas,
+									paragraphXML(runXML("mermaid", cfg.Style.CodeFont, cfg.Style.CodeSize, cfg.Style.AccentColor, true, false, true), "CodeBlock", 0))
+								for _, line := range lines {
+									codeParas = append(codeParas,
+										paragraphXML(runXML(line, cfg.Style.CodeFont, cfg.Style.CodeSize, cfg.Style.TextColor, false, false, true), "CodeBlock", 0))
+								}
+								result.paragraphs[i] = strings.Join(codeParas, "")
+								break
+							}
+						}
+					}
+				}
+			}
+		}
+	}
 
 	var buf bytes.Buffer
 	w := zip.NewWriter(&buf)
 
-	// [Content_Types].xml
-	contentTypes := `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
-		`<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">` +
-		`<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>` +
-		`<Default Extension="xml" ContentType="application/xml"/>` +
-		`<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>` +
-		`<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>` +
-		`<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>` +
-		`<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>` +
-		`</Types>`
-
-	// Relationships
-	rels := `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+	// Package-level relationships
+	packageRels := `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
 		`<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
 		`<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>` +
 		`<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>` +
-		`</Relationships>`
-
-	// Document rels
-	docRels := `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
-		`<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
-		`<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>` +
-		`<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>` +
 		`</Relationships>`
 
 	// Numbering
@@ -196,16 +317,18 @@ func ConvertMarkdownToBytes(markdown string, st *StyleTemplate) ([]byte, error) 
 		`<dc:creator>md2docx</dc:creator>` +
 		`</cp:coreProperties>`
 
+	hasImages := len(mermaidImages) > 0
+
 	entries := []struct {
 		name    string
 		content string
 	}{
-		{"[Content_Types].xml", contentTypes},
-		{"_rels/.rels", rels},
-		{"word/document.xml", documentXML(paragraphs, st.PageMarginInches)},
-		{"word/styles.xml", stylesXML(st)},
+		{"[Content_Types].xml", buildContentTypesXML(hasImages)},
+		{"_rels/.rels", packageRels},
+		{"word/document.xml", documentXML(result.paragraphs, cfg.Style.PageMarginInches, mermaidImages)},
+		{"word/styles.xml", stylesXML(cfg.Style)},
 		{"word/numbering.xml", numbering},
-		{"word/_rels/document.xml.rels", docRels},
+		{"word/_rels/document.xml.rels", buildDocRelsXML(mermaidImages)},
 		{"docProps/core.xml", coreProps},
 	}
 
@@ -220,6 +343,17 @@ func ConvertMarkdownToBytes(markdown string, st *StyleTemplate) ([]byte, error) 
 		}
 	}
 
+	// Write embedded image files
+	for _, img := range mermaidImages {
+		fw, err := w.Create("word/" + img.ImageName)
+		if err != nil {
+			return nil, fmt.Errorf("creating zip entry %s: %w", img.ImageName, err)
+		}
+		if _, err := fw.Write(img.PNGBytes); err != nil {
+			return nil, fmt.Errorf("writing image %s: %w", img.ImageName, err)
+		}
+	}
+
 	if err := w.Close(); err != nil {
 		return nil, fmt.Errorf("closing zip: %w", err)
 	}
@@ -228,15 +362,22 @@ func ConvertMarkdownToBytes(markdown string, st *StyleTemplate) ([]byte, error) 
 }
 
 // ConvertMarkdownToFile converts a markdown file to a DOCX file using the given style.
-func ConvertMarkdownToFile(inputPath, outputPath string, st *StyleTemplate) (*ConversionResult, error) {
+func ConvertMarkdownToFile(inputPath, outputPath string, st *StyleTemplate, opts ...ConversionOption) (*ConversionResult, error) {
 	markdownBytes, err := os.ReadFile(inputPath)
 	if err != nil {
 		return nil, fmt.Errorf("reading markdown file %s: %w", inputPath, err)
 	}
 
-	docxBytes, err := ConvertMarkdownToBytes(string(markdownBytes), st)
+	docxBytes, err := ConvertMarkdownToBytes(string(markdownBytes), st, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("converting: %w", err)
+	}
+
+	// Ensure output directory exists
+	if dir := filepath.Dir(outputPath); dir != "." {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return nil, fmt.Errorf("creating output directory: %w", err)
+		}
 	}
 
 	if err := os.WriteFile(outputPath, docxBytes, 0644); err != nil {

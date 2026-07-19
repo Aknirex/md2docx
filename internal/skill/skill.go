@@ -59,6 +59,12 @@ md2docx convert -i input.md -o output.docx --json
 md2docx convert -i input.md -o output.docx -s cn-official --json
 ` + "```" + `
 
+### Convert with Mermaid diagrams rendered as images
+` + "```bash" + `
+md2docx convert -i input.md -o output.docx --mermaid --json
+md2docx convert -i input.md -o output.docx --mermaid --mermaid-theme dark --json
+` + "```" + `
+
 ### List available style presets
 ` + "```bash" + `
 md2docx presets --json
