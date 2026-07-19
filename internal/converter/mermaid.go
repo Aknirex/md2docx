@@ -102,7 +102,7 @@ type MermaidCLIRenderer struct {
 
 // Render implements MermaidRenderer by calling mmdc with --outputFormat png and piping to stdout.
 func (r *MermaidCLIRenderer) Render(diagram string) ([]byte, int, int, error) {
-	mmdc := r.MMDPath
+	mmdc := r.MMDCPath
 	if mmdc == "" {
 		mmdc = "mmdc"
 	}

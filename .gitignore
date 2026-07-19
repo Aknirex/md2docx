@@ -13,7 +13,6 @@ io/
 *.test
 *.out
 go.work
-go.sum
 
 # GoReleaser
 dist/
