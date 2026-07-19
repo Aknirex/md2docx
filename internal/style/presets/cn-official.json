@@ -1,0 +1,13 @@
+{
+  "titleFont": "SimHei",
+  "titleSize": 22,
+  "headingFont": "SimHei",
+  "headingSize": 16,
+  "bodyFont": "SimSun",
+  "bodySize": 14,
+  "codeFont": "SimHei",
+  "codeSize": 12,
+  "textColor": "#000000",
+  "accentColor": "#C00000",
+  "pageMarginInches": 0.71
+}

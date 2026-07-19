@@ -1,0 +1,13 @@
+{
+  "titleFont": "Cambria",
+  "titleSize": 28,
+  "headingFont": "Calibri",
+  "headingSize": 18,
+  "bodyFont": "Calibri",
+  "bodySize": 11,
+  "codeFont": "Consolas",
+  "codeSize": 10,
+  "textColor": "#1F2937",
+  "accentColor": "#2563EB",
+  "pageMarginInches": 1.0
+}

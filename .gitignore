@@ -2,3 +2,18 @@
 .kilo/node_modules/
 node_modules/
 io/
+
+# Go
+/dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+go.sum
+
+# GoReleaser
+dist/

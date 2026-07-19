@@ -1,0 +1,99 @@
+# GoReleaser configuration for multi-platform builds and releases.
+# https://goreleaser.com
+
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+
+builds:
+  - id: md2docx
+    dir: cmd/md2docx
+    main: .
+    binary: md2docx
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    goarm:
+      - "7"
+    ignore:
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.buildDate={{.Date}}
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+archives:
+  - formats: ["tar.gz"]
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "arm64" }}arm64
+      {{- else }}{{ .Arch }}{{ end }}
+    format_overrides:
+      - goos: windows
+        formats: ["zip"]
+    files:
+      - README.md
+      - LICENSE
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+      - Merge pull request
+      - Merge branch
+
+brews:
+  - name: md2docx
+    repository:
+      owner: md2docx
+      name: homebrew-tap
+    commit_author:
+      name: md2docx-bot
+      email: bot@md2docx.dev
+    homepage: "https://github.com/md2docx/cli"
+    description: "Convert Markdown to professional DOCX documents with region-specific styles"
+    license: "MIT"
+
+nfpms:
+  - id: md2docx
+    package_name: md2docx
+    file_name_template: "{{ .ConventionalFileName }}"
+    vendor: md2docx
+    homepage: https://github.com/md2docx/cli
+    maintainer: md2docx <bot@md2docx.dev>
+    description: Convert Markdown to professional DOCX documents
+    license: MIT
+    formats:
+      - apk
+      - deb
+      - rpm
+    bindir: /usr/bin
+    section: utils
+    contents:
+      - src: ./skills/md2docx/SKILL.md
+        dst: /usr/share/md2docx/SKILL.md
+        file_info:
+          mode: 0644

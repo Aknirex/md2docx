@@ -1,0 +1,13 @@
+{
+  "titleFont": "Times New Roman",
+  "titleSize": 26,
+  "headingFont": "Times New Roman",
+  "headingSize": 16,
+  "bodyFont": "Times New Roman",
+  "bodySize": 12,
+  "codeFont": "Courier New",
+  "codeSize": 10,
+  "textColor": "#000000",
+  "accentColor": "#1A1A1A",
+  "pageMarginInches": 1.0
+}

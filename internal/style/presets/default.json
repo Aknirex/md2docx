@@ -1,0 +1,13 @@
+{
+  "titleFont": "Aptos Display",
+  "titleSize": 28,
+  "headingFont": "Aptos Display",
+  "headingSize": 18,
+  "bodyFont": "Aptos",
+  "bodySize": 11,
+  "codeFont": "Cascadia Mono",
+  "codeSize": 10,
+  "textColor": "#1F2937",
+  "accentColor": "#2563EB",
+  "pageMarginInches": 0.75
+}

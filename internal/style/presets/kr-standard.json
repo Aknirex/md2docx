@@ -1,0 +1,13 @@
+{
+  "titleFont": "Malgun Gothic",
+  "titleSize": 24,
+  "headingFont": "Malgun Gothic",
+  "headingSize": 16,
+  "bodyFont": "Nanum Gothic",
+  "bodySize": 11,
+  "codeFont": "D2Coding",
+  "codeSize": 10,
+  "textColor": "#1C1C1C",
+  "accentColor": "#1E6B4E",
+  "pageMarginInches": 0.8
+}

@@ -1,0 +1,13 @@
+{
+  "titleFont": "Yu Mincho",
+  "titleSize": 22,
+  "headingFont": "Yu Gothic",
+  "headingSize": 16,
+  "bodyFont": "Yu Mincho",
+  "bodySize": 10.5,
+  "codeFont": "UD Digi Kyokasho N-R",
+  "codeSize": 10,
+  "textColor": "#2D2D2D",
+  "accentColor": "#1A478A",
+  "pageMarginInches": 0.71
+}

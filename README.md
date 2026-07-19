@@ -1,38 +1,157 @@
-# Markdown to DOCX
+# md2docx
 
-A dependency-free PowerShell 7 tool that writes standard DOCX (Open XML) files from Markdown.
+[![Go Version](https://img.shields.io/github/go-mod/go-version/md2docx/cli)](https://go.dev)
+[![License](https://img.shields.io/github/license/md2docx/cli)](./LICENSE)
+[![Release](https://img.shields.io/github/v/release/md2docx/cli)](https://github.com/md2docx/cli/releases/latest)
+[![CI](https://img.shields.io/github/actions/workflow/status/md2docx/cli/ci.yml?branch=main)](https://github.com/md2docx/cli/actions)
+[![Platforms](https://img.shields.io/badge/platform-linux%20%7C%20macOS%20%7C%20windows-blue)]()
 
-## Use
+Convert Markdown to professional DOCX documents — dependency-free, no Word or Pandoc required.
 
-Start the terminal interface:
+Built in Go. Distributed as a single static binary with no runtime dependencies.
 
-```powershell
-pwsh ./markdown-to-docx.ps1
+[English](./README.md) | [简体中文](./docs/README.zh-CN.md) | [日本語](./docs/README.ja.md) | [한국어](./docs/README.ko.md) | [Español](./docs/README.es.md) | [Português](./docs/README.pt-BR.md) | [Deutsch](./docs/README.de.md) | [Français](./docs/README.fr.md)
+
+## Quick Start
+
+### Interactive TUI (for humans)
+
+```bash
+md2docx
 ```
 
-Use Up/Down and Enter to select the Markdown file, a JSON template, and the output folder/name. In every file browser, Backspace goes to the parent folder. Backspace on a selected main-menu field clears it. The template browser also includes **Create a new style template**, which saves a default editable JSON file.
+A terminal UI with arrow-key navigation:
+- Select Markdown input file
+- Choose output location and filename
+- Pick a built-in style preset (US, CN, JP, EU, KR, Academic) or a custom JSON template
+- Confirm and convert
 
-Run non-interactively:
+### CLI (for agents / automation)
 
-```powershell
-pwsh ./markdown-to-docx.ps1 -InputPath .\notes.md -OutputPath .\notes.docx -TemplatePath .\style.json
+```bash
+# Convert with defaults
+md2docx convert -i notes.md -o notes.docx --json
+
+# Convert with a country-specific preset
+md2docx convert -i report.md -o report.docx -s cn-official --json
+
+# List all presets
+md2docx presets --json
+
+# Create a custom template from a preset
+md2docx template create -o my-style.json -s jp-formal
+
+# Convert with a custom template
+md2docx convert -i doc.md -o doc.docx -s my-style.json --json
 ```
 
-## Templates
-
-Templates are JSON with these required properties: `titleFont`, `titleSize`, `headingFont`, `headingSize`, `bodyFont`, `bodySize`, `codeFont`, `codeSize`, `textColor`, `accentColor`, and `pageMarginInches`. Colors use `#RRGGBB`; sizes and margin must be positive. Create a baseline from the UI or run:
-
-```powershell
-Import-Module ./MarkdownDocx.psm1
-New-StyleTemplate -Path ./style.json
+The `--json` flag produces structured JSON suitable for agent consumption:
+```json
+{"success": true, "outputPath": "/path/to/output.docx", "bytes": 12345}
 ```
 
-Supported Markdown: headings, paragraphs, unordered and ordered lists, block quotes, fenced code blocks, bold, italics, and inline code.
+## Installation
 
-## Tests
+### Via Go
 
-```powershell
-Invoke-Pester ./tests
+```bash
+go install github.com/md2docx/cli/cmd/md2docx@latest
 ```
 
-The tool produces DOCX directly with .NET ZIP APIs; it does not require Word, Pandoc, LibreOffice, or external modules.
+### Pre-built binaries
+
+Download from [GitHub Releases](https://github.com/md2docx/cli/releases) for:
+- Linux (amd64, arm64)
+- macOS (amd64, arm64)
+- Windows (amd64)
+
+### Package managers
+
+```bash
+# Homebrew
+brew install md2docx/homebrew-tap/md2docx
+
+# Debian/Ubuntu
+dpkg -i md2docx_*.deb
+
+# RPM
+rpm -i md2docx_*.rpm
+```
+
+## Built-in Style Presets
+
+| Preset       | Region  | Fonts                                   |
+|-------------|---------|------------------------------------------|
+| us-business | US      | Cambria / Calibri / Consolas            |
+| us-modern   | US      | Segoe UI / Cascadia Code                |
+| cn-official | China   | SimHei / SimSun (公文风格)               |
+| cn-modern   | China   | Noto Sans SC / Noto Sans Mono SC        |
+| jp-formal   | Japan   | Yu Mincho / Yu Gothic                   |
+| eu-clean    | Europe  | Helvetica / Arial / Fira Code           |
+| kr-standard | Korea   | Malgun Gothic / Nanum Gothic / D2Coding |
+| academic    | Global  | Times New Roman / Courier New           |
+| default     | Global  | Aptos Display / Cascadia Mono           |
+
+## Agent Skill
+
+md2docx includes a built-in agent skill so AI coding agents (Kilo, Claude Code, etc.) can discover and invoke it automatically.
+
+**Install the skill:**
+
+```bash
+# Auto-discover .kilo/skills in current project (or fall back to ~/.config/kilo/skills)
+md2docx skill install
+
+# Install to an explicit path
+md2docx skill install --path /path/to/.kilo/skills/md2docx
+```
+
+After installation, agents that scan `.kilo/skills/` or `~/.config/kilo/skills/` will find the `md2docx` skill and know how to invoke it for markdown-to-docx conversions.
+
+## Style Templates
+
+Custom style templates are JSON files:
+
+```json
+{
+  "titleFont": "Arial",
+  "titleSize": 28,
+  "headingFont": "Arial",
+  "headingSize": 16,
+  "bodyFont": "Times New Roman",
+  "bodySize": 12,
+  "codeFont": "Courier New",
+  "codeSize": 10,
+  "textColor": "#1F2937",
+  "accentColor": "#2563EB",
+  "pageMarginInches": 1.0
+}
+```
+
+Create one from a preset:
+```bash
+md2docx template create -o my-style.json -s default
+```
+
+## Supported Markdown
+
+- Headings (h1–h6)
+- Paragraphs
+- Unordered lists (`-`, `+`, `*`)
+- Ordered lists (`1.`, `1)`)
+- Blockquotes (`>`)
+- Fenced code blocks (` ``` `)
+- **Bold**, *italic*, `inline code`
+
+## Build from Source
+
+```bash
+git clone https://github.com/md2docx/cli
+cd cli
+go mod tidy
+make build
+```
+
+## License
+
+MIT

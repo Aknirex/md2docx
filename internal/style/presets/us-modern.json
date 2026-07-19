@@ -1,0 +1,13 @@
+{
+  "titleFont": "Segoe UI",
+  "titleSize": 26,
+  "headingFont": "Segoe UI",
+  "headingSize": 16,
+  "bodyFont": "Segoe UI",
+  "bodySize": 10.5,
+  "codeFont": "Cascadia Code",
+  "codeSize": 9.5,
+  "textColor": "#111827",
+  "accentColor": "#7C3AED",
+  "pageMarginInches": 0.8
+}

@@ -1,0 +1,13 @@
+{
+  "titleFont": "Noto Sans SC",
+  "titleSize": 24,
+  "headingFont": "Noto Sans SC",
+  "headingSize": 16,
+  "bodyFont": "Noto Sans SC",
+  "bodySize": 11,
+  "codeFont": "Noto Sans Mono SC",
+  "codeSize": 10,
+  "textColor": "#1A1A2E",
+  "accentColor": "#E94560",
+  "pageMarginInches": 0.8
+}

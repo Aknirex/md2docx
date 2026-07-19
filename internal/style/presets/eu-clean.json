@@ -1,0 +1,13 @@
+{
+  "titleFont": "Helvetica",
+  "titleSize": 26,
+  "headingFont": "Arial",
+  "headingSize": 16,
+  "bodyFont": "Helvetica",
+  "bodySize": 10.5,
+  "codeFont": "Fira Code",
+  "codeSize": 9.5,
+  "textColor": "#1E1E1E",
+  "accentColor": "#007ACC",
+  "pageMarginInches": 0.79
+}
