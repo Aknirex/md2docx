@@ -3,13 +3,11 @@ package main
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 
 	"github.com/md2docx/cli/internal/cli"
-	"github.com/md2docx/cli/internal/skill"
 	"github.com/md2docx/cli/internal/style"
 	"github.com/md2docx/cli/internal/tui"
 )
@@ -104,57 +102,6 @@ Examples:
 
 	templateCmd.AddCommand(templateCreateCmd)
 
-	// skill subcommand
-	skillCmd := &cobra.Command{
-		Use:   "skill",
-		Short: "Agent skill management (install for AI agent auto-discovery)",
-		Long: `Manage the md2docx agent skill for automated tool discovery.
-
-Skills are SKILL.md files that AI coding agents (Kilo, Claude Code, etc.)
-read to understand how to install and invoke external tools.
-
-The 'skill install' command detects supported agents and installs the skill:
-  - Scans for existing agent skill directories
-  - Installs SKILL.md via symlink (preferred) or copy
-  - Tracks all installations for future updates
-
-Supported agents: kilo, claude (Claude Code), kilocode`,
-	}
-
-	skillInstallCmd := &cobra.Command{
-		Use:   "install",
-		Short: "Install the agent skill for auto-discovery",
-		Long: `Install a SKILL.md file that AI agents can discover.
-
-Without flags, auto-detects all supported agents and installs for each.
-Use --agents to limit to specific agents.
-Use --path for a custom directory.
-
-Examples:
-  md2docx skill install                     # Install for all detected agents
-  md2docx skill install --agents kilo,claude  # Only Kilo and Claude Code
-  md2docx skill install --path /custom/dir    # Custom path
-  md2docx skill install --no-symlink          # Force copy instead of symlink`,
-		Run: runSkillInstall,
-	}
-	skillInstallCmd.Flags().String("agents", "", "Comma-separated agent names (kilo,claude,kilocode)")
-	skillInstallCmd.Flags().StringP("path", "p", "", "Custom installation directory")
-	skillInstallCmd.Flags().Bool("no-symlink", false, "Copy instead of creating symlinks")
-
-	skillListCmd := &cobra.Command{
-		Use:   "list",
-		Short: "List installed skills and their locations",
-		Run:   runSkillList,
-	}
-
-	skillUninstallCmd := &cobra.Command{
-		Use:   "uninstall",
-		Short: "Remove all installed skills",
-		Run:   runSkillUninstall,
-	}
-
-	skillCmd.AddCommand(skillInstallCmd, skillListCmd, skillUninstallCmd)
-
 	// version subcommand
 	versionCmd := &cobra.Command{
 		Use:   "version",
@@ -164,7 +111,7 @@ Examples:
 		},
 	}
 
-	rootCmd.AddCommand(convertCmd, presetsCmd, presetCmd, templateCmd, skillCmd, versionCmd)
+	rootCmd.AddCommand(convertCmd, presetsCmd, presetCmd, templateCmd, versionCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
@@ -216,86 +163,4 @@ func runTemplateCreate(cmd *cobra.Command, args []string) {
 	}
 
 	cli.CreateTemplate(output, styleRef, !jsonOutput)
-}
-
-func runSkillInstall(cmd *cobra.Command, args []string) {
-	explicitPath, _ := cmd.Flags().GetString("path")
-	agentsFlag, _ := cmd.Flags().GetString("agents")
-	noSymlink, _ := cmd.Flags().GetBool("no-symlink")
-
-	preferSymlink := !noSymlink
-
-	// Explicit path mode
-	if explicitPath != "" {
-		result, err := skill.InstallToPath(explicitPath, preferSymlink)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-			os.Exit(1)
-		}
-		fmt.Printf("Skill installed (%s): %s\n", result.Type, result.TargetDir)
-		return
-	}
-
-	// Parse agent filter
-	var agentNames []string
-	if agentsFlag != "" {
-		for _, name := range strings.Split(agentsFlag, ",") {
-			name = strings.TrimSpace(name)
-			if name != "" {
-				agentNames = append(agentNames, name)
-			}
-		}
-	}
-
-	result, err := skill.InstallSkills(agentNames, preferSymlink)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
-	}
-
-	if len(result.Results) == 0 && len(result.Skipped) == 0 {
-		fmt.Println("No supported agents detected. Use --agents to specify, or --path for a custom directory.")
-		fmt.Println("\nSupported agents: kilo, claude, kilocode")
-		fmt.Println("Detected agent skill directories:")
-		for _, target := range skill.DetectAgents() {
-			fmt.Printf("  %s -> %s\n", target.Agent.Label, target.TargetDir)
-		}
-		return
-	}
-
-	for _, r := range result.Results {
-		if r.Error != nil {
-			fmt.Fprintf(os.Stderr, "  %s: ERROR: %v\n", r.Agent, r.Error)
-		} else {
-			fmt.Printf("  %s: %s -> %s (%s)\n", r.Agent, r.Type, r.TargetDir, r.Type)
-		}
-	}
-	for _, name := range result.Skipped {
-		fmt.Printf("  %s: SKIPPED (already installed)\n", name)
-	}
-}
-
-func runSkillList(cmd *cobra.Command, args []string) {
-	installations, err := skill.ListInstallations()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
-	}
-	if len(installations) == 0 {
-		fmt.Println("No skills installed.")
-		return
-	}
-	fmt.Println("Installed skills:")
-	for _, inst := range installations {
-		fmt.Printf("  %-8s %-8s %s\n", inst.Agent, inst.Type, inst.Target)
-	}
-}
-
-func runSkillUninstall(cmd *cobra.Command, args []string) {
-	count, err := skill.UninstallAll()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
-	}
-	fmt.Printf("Uninstalled %d skill(s).\n", count)
 }

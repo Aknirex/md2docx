@@ -98,19 +98,15 @@ rpm -i md2docx_*.rpm
 
 ## Agent Skill
 
-md2docx includes a built-in agent skill so AI coding agents (Kilo, Claude Code, etc.) can discover and invoke it automatically.
+md2docx includes a SKILL.md so AI coding agents (Kilo, Claude Code, etc.) can discover and invoke it automatically.
 
-**Install the skill:**
+**Install via npx skills:**
 
 ```bash
-# Auto-discover .kilo/skills in current project (or fall back to ~/.config/kilo/skills)
-md2docx skill install
-
-# Install to an explicit path
-md2docx skill install --path /path/to/.kilo/skills/md2docx
+npx skills add Aknirex/md2docx
 ```
 
-After installation, agents that scan `.kilo/skills/` or `~/.config/kilo/skills/` will find the `md2docx` skill and know how to invoke it for markdown-to-docx conversions.
+After installation, agents will know how to invoke `md2docx convert -i <input> -o <output> --json` for markdown-to-docx conversions.
 
 ## Style Templates
 

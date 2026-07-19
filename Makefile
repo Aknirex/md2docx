@@ -52,10 +52,6 @@ lint:
 install:
 	go install -ldflags="$(LDFLAGS)" $(CMD_DIR)
 
-.PHONY: install-skill
-install-skill:
-	go run $(CMD_DIR) skill install
-
 .PHONY: clean
 clean:
 	rm -rf $(DIST_DIR)

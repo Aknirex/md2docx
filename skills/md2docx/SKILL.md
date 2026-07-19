@@ -113,18 +113,4 @@ When `--mermaid` is set, ```` ```mermaid ```` blocks are rendered as embedded PN
 - No Word, Pandoc, or LibreOffice needed
 - Mermaid rendering requires network access (mermaid.ink)
 - Self-contained static binary, zero runtime dependencies
-
-## Skill Management
-
-Install this skill for other agents:
-
-```bash
-# Install for all detected agents (Kilo, Claude Code, etc.)
-md2docx skill install
-
-# Install for specific agents  
-md2docx skill install --agents kilo,claude
-
-# List installations
-md2docx skill list
-```
+- Install the skill via: `npx skills add Aknirex/md2docx`
