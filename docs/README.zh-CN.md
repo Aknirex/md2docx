@@ -1,9 +1,9 @@
 # md2docx
 
-[![Go Version](https://img.shields.io/github/go-mod/go-version/md2docx/cli)](https://go.dev)
-[![License](https://img.shields.io/github/license/md2docx/cli)](../LICENSE)
-[![Release](https://img.shields.io/github/v/release/md2docx/cli)](https://github.com/md2docx/cli/releases/latest)
-[![CI](https://img.shields.io/github/actions/workflow/status/md2docx/cli/ci.yml?branch=main)](https://github.com/md2docx/cli/actions)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/Aknirex/md2docx)](https://go.dev)
+[![License](https://img.shields.io/github/license/Aknirex/md2docx)](../LICENSE)
+[![Release](https://img.shields.io/github/v/release/Aknirex/md2docx)](https://github.com/Aknirex/md2docx/releases/latest)
+[![CI](https://img.shields.io/github/actions/workflow/status/Aknirex/md2docx/ci.yml?branch=main)](https://github.com/Aknirex/md2docx/actions)
 [![Platforms](https://img.shields.io/badge/platform-linux%20%7C%20macOS%20%7C%20windows-blue)]()
 
 将 Markdown 转换为专业 DOCX 文档——无需 Word 或 Pandoc，完全无外部依赖。
@@ -55,12 +55,12 @@ md2docx convert -i doc.md -o doc.docx -s my-style.json --json
 ### 通过 Go 安装
 
 ```bash
-go install github.com/md2docx/cli/cmd/md2docx@latest
+go install github.com/Aknirex/md2docx/cmd/md2docx@latest
 ```
 
 ### 预编译二进制
 
-从 [GitHub Releases](https://github.com/md2docx/cli/releases) 下载，支持：
+从 [GitHub Releases](https://github.com/Aknirex/md2docx/releases) 下载，支持：
 - Linux (amd64, arm64)
 - macOS (amd64, arm64)
 - Windows (amd64)
@@ -84,7 +84,7 @@ rpm -i md2docx_*.rpm
 |-------------|--------|-------------------------------------------|
 | us-business | 美国   | Cambria / Calibri / Consolas              |
 | us-modern   | 美国   | Segoe UI / Cascadia Code                  |
-| cn-official | 中国   | 黑体 / 宋体（公文风格）                      |
+| cn-official | 中国   | 小标宋_GBK / 仿宋_GB2312 / 楷体_GB2312（公文风格） |
 | cn-modern   | 中国   | Noto Sans SC / Noto Sans Mono SC          |
 | jp-formal   | 日本   | Yu Mincho / Yu Gothic                     |
 | eu-clean    | 欧洲   | Helvetica / Arial / Fira Code             |
@@ -94,19 +94,15 @@ rpm -i md2docx_*.rpm
 
 ## Agent Skill
 
-md2docx 包含内置 Agent Skill，AI 编程助手（Kilo、Claude Code 等）可自动发现并调用。
+md2docx 包含 SKILL.md，AI 编程助手（Kilo、Claude Code 等）可以自动发现并调用。
 
-**安装 Skill：**
+**通过 npx skills 安装：**
 
 ```bash
-# 自动发现当前项目中的 .kilo/skills（或回退到 ~/.config/kilo/skills）
-md2docx skill install
-
-# 安装到指定路径
-md2docx skill install --path /path/to/.kilo/skills/md2docx
+npx skills add Aknirex/md2docx
 ```
 
-安装后，扫描 `.kilo/skills/` 或 `~/.config/kilo/skills/` 的 Agent 将自动发现 `md2docx` Skill，了解如何调用它进行 Markdown 到 DOCX 的转换。
+安装后，Agent 将知道如何调用 `md2docx convert -i <input> -o <output> --json` 进行 Markdown 到 DOCX 的转换。
 
 ## 风格模板
 
@@ -114,13 +110,13 @@ md2docx skill install --path /path/to/.kilo/skills/md2docx
 
 ```json
 {
-  "titleFont": "黑体",
+  "titleFont": "小标宋_GBK",
   "titleSize": 22,
-  "headingFont": "黑体",
+  "headingFont": "楷体_GB2312",
   "headingSize": 16,
-  "bodyFont": "宋体",
+  "bodyFont": "仿宋_GB2312",
   "bodySize": 14,
-  "codeFont": "黑体",
+  "codeFont": "楷体_GB2312",
   "codeSize": 12,
   "textColor": "#000000",
   "accentColor": "#C00000",
@@ -146,8 +142,8 @@ md2docx template create -o my-style.json -s cn-official
 ## 从源码构建
 
 ```bash
-git clone https://github.com/md2docx/cli
-cd cli
+git clone https://github.com/Aknirex/md2docx
+cd md2docx
 go mod tidy
 make build
 ```

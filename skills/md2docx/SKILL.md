@@ -14,13 +14,13 @@ Before using, ensure the **md2docx** binary is available on your PATH.
 ### Install via Go
 
 ```bash
-go install github.com/md2docx/cli/cmd/md2docx@latest
+go install github.com/Aknirex/md2docx/cmd/md2docx@latest
 ```
 
 ### Direct Download
 
 Download the latest binary for your platform from:
-[GitHub Releases](https://github.com/md2docx/cli/releases/latest)
+[GitHub Releases](https://github.com/Aknirex/md2docx/releases/latest)
 
 - **Linux**: `md2docx-linux-amd64` / `md2docx-linux-arm64`
 - **macOS**: `md2docx-darwin-amd64` / `md2docx-darwin-arm64`  
@@ -32,7 +32,7 @@ Place the binary in your PATH.
 
 ```bash
 # Homebrew (macOS / Linux)
-brew install md2docx/homebrew-tap/md2docx
+brew install Aknirex/homebrew-tap/md2docx
 
 # Debian / Ubuntu
 dpkg -i md2docx_*.deb
@@ -81,7 +81,7 @@ md2docx template create -o my-style.json -s us-business --json
 |--------------|---------|--------------------------------------------|
 | us-business  | US      | Cambria/Calibri, professional blue accent  |
 | us-modern    | US      | Segoe UI, minimal dark tones               |
-| cn-official  | China   | SimHei/SimSun (公文风格), red accent        |
+| cn-official  | China   | 小标宋_GBK/仿宋_GB2312/楷体_GB2312 (公文风格), red accent |
 | cn-modern    | China   | Noto Sans SC, modern Chinese               |
 | jp-formal    | Japan   | Yu Mincho/Yu Gothic, business formal       |
 | eu-clean     | Europe  | Helvetica/Arial, clean minimalist          |

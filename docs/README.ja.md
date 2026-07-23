@@ -1,9 +1,9 @@
 # md2docx
 
-[![Go Version](https://img.shields.io/github/go-mod/go-version/md2docx/cli)](https://go.dev)
-[![License](https://img.shields.io/github/license/md2docx/cli)](../LICENSE)
-[![Release](https://img.shields.io/github/v/release/md2docx/cli)](https://github.com/md2docx/cli/releases/latest)
-[![CI](https://img.shields.io/github/actions/workflow/status/md2docx/cli/ci.yml?branch=main)](https://github.com/md2docx/cli/actions)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/Aknirex/md2docx)](https://go.dev)
+[![License](https://img.shields.io/github/license/Aknirex/md2docx)](../LICENSE)
+[![Release](https://img.shields.io/github/v/release/Aknirex/md2docx)](https://github.com/Aknirex/md2docx/releases/latest)
+[![CI](https://img.shields.io/github/actions/workflow/status/Aknirex/md2docx/ci.yml?branch=main)](https://github.com/Aknirex/md2docx/actions)
 [![Platforms](https://img.shields.io/badge/platform-linux%20%7C%20macOS%20%7C%20windows-blue)]()
 
 Markdown をプロフェッショナルな DOCX ドキュメントに変換——Word や Pandoc 不要、外部依存ゼロ。
@@ -55,12 +55,12 @@ md2docx convert -i doc.md -o doc.docx -s my-style.json --json
 ### Go 経由
 
 ```bash
-go install github.com/md2docx/cli/cmd/md2docx@latest
+go install github.com/Aknirex/md2docx/cmd/md2docx@latest
 ```
 
 ### ビルド済みバイナリ
 
-[GitHub Releases](https://github.com/md2docx/cli/releases) からダウンロード：
+[GitHub Releases](https://github.com/Aknirex/md2docx/releases) からダウンロード：
 - Linux (amd64, arm64)
 - macOS (amd64, arm64)
 - Windows (amd64)
@@ -84,7 +84,7 @@ rpm -i md2docx_*.rpm
 |--------------|--------|-------------------------------------------|
 | us-business  | 米国   | Cambria / Calibri / Consolas              |
 | us-modern    | 米国   | Segoe UI / Cascadia Code                  |
-| cn-official  | 中国   | SimHei / SimSun（公文形式）                 |
+| cn-official  | 中国   | 小标宋_GBK / 仿宋_GB2312 / 楷体_GB2312（公文形式） |
 | cn-modern    | 中国   | Noto Sans SC / Noto Sans Mono SC          |
 | jp-formal    | 日本   | Yu Mincho / Yu Gothic                     |
 | eu-clean     | 欧州   | Helvetica / Arial / Fira Code             |
@@ -94,19 +94,15 @@ rpm -i md2docx_*.rpm
 
 ## エージェントスキル
 
-md2docx にはビルトインのエージェントスキルが含まれており、AI コーディングエージェント（Kilo、Claude Code など）が自動的に発見して呼び出せます。
+md2docx には SKILL.md が含まれており、AI コーディングエージェント（Kilo、Claude Code など）が自動的に発見して呼び出せます。
 
-**スキルのインストール：**
+**npx skills でインストール：**
 
 ```bash
-# 現在のプロジェクトの .kilo/skills を自動検出（なければ ~/.config/kilo/skills にフォールバック）
-md2docx skill install
-
-# 明示的なパスにインストール
-md2docx skill install --path /path/to/.kilo/skills/md2docx
+npx skills add Aknirex/md2docx
 ```
 
-インストール後、`.kilo/skills/` または `~/.config/kilo/skills/` をスキャンするエージェントは `md2docx` スキルを発見し、Markdown から DOCX への変換方法を認識します。
+インストール後、エージェントは `md2docx convert -i <input> -o <output> --json` を使って Markdown から DOCX への変換方法を理解します。
 
 ## スタイルテンプレート
 
@@ -146,8 +142,8 @@ md2docx template create -o my-style.json -s jp-formal
 ## ソースからビルド
 
 ```bash
-git clone https://github.com/md2docx/cli
-cd cli
+git clone https://github.com/Aknirex/md2docx
+cd md2docx
 go mod tidy
 make build
 ```

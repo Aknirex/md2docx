@@ -1,9 +1,9 @@
 # md2docx
 
-[![Go Version](https://img.shields.io/github/go-mod/go-version/md2docx/cli)](https://go.dev)
-[![License](https://img.shields.io/github/license/md2docx/cli)](../LICENSE)
-[![Release](https://img.shields.io/github/v/release/md2docx/cli)](https://github.com/md2docx/cli/releases/latest)
-[![CI](https://img.shields.io/github/actions/workflow/status/md2docx/cli/ci.yml?branch=main)](https://github.com/md2docx/cli/actions)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/Aknirex/md2docx)](https://go.dev)
+[![License](https://img.shields.io/github/license/Aknirex/md2docx)](../LICENSE)
+[![Release](https://img.shields.io/github/v/release/Aknirex/md2docx)](https://github.com/Aknirex/md2docx/releases/latest)
+[![CI](https://img.shields.io/github/actions/workflow/status/Aknirex/md2docx/ci.yml?branch=main)](https://github.com/Aknirex/md2docx/actions)
 [![Platforms](https://img.shields.io/badge/platform-linux%20%7C%20macOS%20%7C%20windows-blue)]()
 
 Markdown을 전문적인 DOCX 문서로 변환 — Word나 Pandoc 불필요, 외부 의존성 제로.
@@ -55,12 +55,12 @@ md2docx convert -i doc.md -o doc.docx -s my-style.json --json
 ### Go를 통한 설치
 
 ```bash
-go install github.com/md2docx/cli/cmd/md2docx@latest
+go install github.com/Aknirex/md2docx/cmd/md2docx@latest
 ```
 
 ### 사전 빌드된 바이너리
 
-[GitHub Releases](https://github.com/md2docx/cli/releases)에서 다운로드:
+[GitHub Releases](https://github.com/Aknirex/md2docx/releases)에서 다운로드:
 - Linux (amd64, arm64)
 - macOS (amd64, arm64)
 - Windows (amd64)
@@ -84,7 +84,7 @@ rpm -i md2docx_*.rpm
 |-------------|--------|-------------------------------------------|
 | us-business | 미국   | Cambria / Calibri / Consolas              |
 | us-modern   | 미국   | Segoe UI / Cascadia Code                  |
-| cn-official | 중국   | SimHei / SimSun (공문서 스타일)             |
+| cn-official | 중국   | 小标宋_GBK / 仿宋_GB2312 / 楷体_GB2312 (공문서 스타일) |
 | cn-modern   | 중국   | Noto Sans SC / Noto Sans Mono SC          |
 | jp-formal   | 일본   | Yu Mincho / Yu Gothic                     |
 | eu-clean    | 유럽   | Helvetica / Arial / Fira Code             |
@@ -94,19 +94,15 @@ rpm -i md2docx_*.rpm
 
 ## 에이전트 스킬
 
-md2docx에는 AI 코딩 에이전트(Kilo, Claude Code 등)가 자동으로 발견하고 호출할 수 있는 내장 에이전트 스킬이 포함되어 있습니다.
+md2docx에는 SKILL.md가 포함되어 있어 AI 코딩 에이전트(Kilo, Claude Code 등)가 자동으로 발견하고 호출할 수 있습니다.
 
-**스킬 설치:**
+**npx skills로 설치:**
 
 ```bash
-# 현재 프로젝트의 .kilo/skills 자동 감지 (없으면 ~/.config/kilo/skills로 폴백)
-md2docx skill install
-
-# 명시적 경로에 설치
-md2docx skill install --path /path/to/.kilo/skills/md2docx
+npx skills add Aknirex/md2docx
 ```
 
-설치 후 `.kilo/skills/` 또는 `~/.config/kilo/skills/`를 스캔하는 에이전트는 `md2docx` 스킬을 발견하고 Markdown을 DOCX로 변환하는 방법을 인식합니다.
+설치 후 에이전트는 `md2docx convert -i <input> -o <output> --json`을 사용하여 Markdown을 DOCX로 변환하는 방법을 알게 됩니다.
 
 ## 스타일 템플릿
 
@@ -146,8 +142,8 @@ md2docx template create -o my-style.json -s kr-standard
 ## 소스에서 빌드
 
 ```bash
-git clone https://github.com/md2docx/cli
-cd cli
+git clone https://github.com/Aknirex/md2docx
+cd md2docx
 go mod tidy
 make build
 ```

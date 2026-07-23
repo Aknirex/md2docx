@@ -1,9 +1,9 @@
 # md2docx
 
-[![Go Version](https://img.shields.io/github/go-mod/go-version/md2docx/cli)](https://go.dev)
-[![License](https://img.shields.io/github/license/md2docx/cli)](../LICENSE)
-[![Release](https://img.shields.io/github/v/release/md2docx/cli)](https://github.com/md2docx/cli/releases/latest)
-[![CI](https://img.shields.io/github/actions/workflow/status/md2docx/cli/ci.yml?branch=main)](https://github.com/md2docx/cli/actions)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/Aknirex/md2docx)](https://go.dev)
+[![License](https://img.shields.io/github/license/Aknirex/md2docx)](../LICENSE)
+[![Release](https://img.shields.io/github/v/release/Aknirex/md2docx)](https://github.com/Aknirex/md2docx/releases/latest)
+[![CI](https://img.shields.io/github/actions/workflow/status/Aknirex/md2docx/ci.yml?branch=main)](https://github.com/Aknirex/md2docx/actions)
 [![Platforms](https://img.shields.io/badge/platform-linux%20%7C%20macOS%20%7C%20windows-blue)]()
 
 Konvertiert Markdown in professionelle DOCX-Dokumente — ohne Abhaengigkeiten, kein Word oder Pandoc erforderlich.
@@ -55,12 +55,12 @@ Das `--json`-Flag erzeugt strukturiertes JSON fuer die Agentenverarbeitung:
 ### Via Go
 
 ```bash
-go install github.com/md2docx/cli/cmd/md2docx@latest
+go install github.com/Aknirex/md2docx/cmd/md2docx@latest
 ```
 
 ### Vorkompilierte Binaries
 
-Herunterladen von [GitHub Releases](https://github.com/md2docx/cli/releases) fuer:
+Herunterladen von [GitHub Releases](https://github.com/Aknirex/md2docx/releases) fuer:
 - Linux (amd64, arm64)
 - macOS (amd64, arm64)
 - Windows (amd64)
@@ -84,7 +84,7 @@ rpm -i md2docx_*.rpm
 |------------|--------|------------------------------------------|
 | us-business | USA    | Cambria / Calibri / Consolas             |
 | us-modern   | USA    | Segoe UI / Cascadia Code                 |
-| cn-official | China  | SimHei / SimSun (Amtliches Dokument)      |
+| cn-official | China  | 小标宋_GBK / 仿宋_GB2312 / 楷体_GB2312 (Amtliches Dokument) |
 | cn-modern   | China  | Noto Sans SC / Noto Sans Mono SC         |
 | jp-formal   | Japan  | Yu Mincho / Yu Gothic                    |
 | eu-clean    | Europa | Helvetica / Arial / Fira Code            |
@@ -94,19 +94,15 @@ rpm -i md2docx_*.rpm
 
 ## Agenten-Skill
 
-md2docx enthaelt einen integrierten Agenten-Skill, damit KI-Coding-Agenten (Kilo, Claude Code, etc.) ihn automatisch entdecken und aufrufen koennen.
+md2docx enthaelt eine SKILL.md, damit KI-Coding-Agenten (Kilo, Claude Code, etc.) ihn automatisch entdecken und aufrufen koennen.
 
-**Skill installieren:**
+**Ueber npx skills installieren:**
 
 ```bash
-# .kilo/skills im aktuellen Projekt automatisch erkennen (oder ~/.config/kilo/skills als Fallback)
-md2docx skill install
-
-# An explizitem Pfad installieren
-md2docx skill install --path /pfad/.kilo/skills/md2docx
+npx skills add Aknirex/md2docx
 ```
 
-Nach der Installation finden Agenten, die `.kilo/skills/` oder `~/.config/kilo/skills/` scannen, den `md2docx`-Skill und wissen, wie sie ihn fuer Markdown-zu-DOCX-Konvertierungen aufrufen.
+Nach der Installation wissen die Agenten, wie sie `md2docx convert -i <input> -o <output> --json` fuer Markdown-zu-DOCX-Konvertierungen aufrufen.
 
 ## Stilvorlagen
 
@@ -146,8 +142,8 @@ md2docx template create -o mein-stil.json -s default
 ## Aus dem Quellcode bauen
 
 ```bash
-git clone https://github.com/md2docx/cli
-cd cli
+git clone https://github.com/Aknirex/md2docx
+cd md2docx
 go mod tidy
 make build
 ```

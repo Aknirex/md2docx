@@ -1,9 +1,9 @@
 # md2docx
 
-[![Go Version](https://img.shields.io/github/go-mod/go-version/md2docx/cli)](https://go.dev)
-[![License](https://img.shields.io/github/license/md2docx/cli)](./LICENSE)
-[![Release](https://img.shields.io/github/v/release/md2docx/cli)](https://github.com/md2docx/cli/releases/latest)
-[![CI](https://img.shields.io/github/actions/workflow/status/md2docx/cli/ci.yml?branch=main)](https://github.com/md2docx/cli/actions)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/Aknirex/md2docx)](https://go.dev)
+[![License](https://img.shields.io/github/license/Aknirex/md2docx)](./LICENSE)
+[![Release](https://img.shields.io/github/v/release/Aknirex/md2docx)](https://github.com/Aknirex/md2docx/releases/latest)
+[![CI](https://img.shields.io/github/actions/workflow/status/Aknirex/md2docx/ci.yml?branch=main)](https://github.com/Aknirex/md2docx/actions)
 [![Platforms](https://img.shields.io/badge/platform-linux%20%7C%20macOS%20%7C%20windows-blue)]()
 
 Convert Markdown to professional DOCX documents — dependency-free, no Word or Pandoc required.
@@ -59,12 +59,12 @@ The `--json` flag produces structured JSON suitable for agent consumption:
 ### Via Go
 
 ```bash
-go install github.com/md2docx/cli/cmd/md2docx@latest
+go install github.com/Aknirex/md2docx/cmd/md2docx@latest
 ```
 
 ### Pre-built binaries
 
-Download from [GitHub Releases](https://github.com/md2docx/cli/releases) for:
+Download from [GitHub Releases](https://github.com/Aknirex/md2docx/releases) for:
 - Linux (amd64, arm64)
 - macOS (amd64, arm64)
 - Windows (amd64)
@@ -88,7 +88,7 @@ rpm -i md2docx_*.rpm
 |-------------|---------|------------------------------------------|
 | us-business | US      | Cambria / Calibri / Consolas            |
 | us-modern   | US      | Segoe UI / Cascadia Code                |
-| cn-official | China   | SimHei / SimSun (公文风格)               |
+| cn-official | China   | 小标宋_GBK / 仿宋_GB2312 / 楷体_GB2312（公文风格） |
 | cn-modern   | China   | Noto Sans SC / Noto Sans Mono SC        |
 | jp-formal   | Japan   | Yu Mincho / Yu Gothic                   |
 | eu-clean    | Europe  | Helvetica / Arial / Fira Code           |
@@ -166,8 +166,8 @@ In the TUI, toggle Mermaid rendering on the confirm screen.
 ## Build from Source
 
 ```bash
-git clone https://github.com/md2docx/cli
-cd cli
+git clone https://github.com/Aknirex/md2docx
+cd md2docx
 go mod tidy
 make build
 ```
