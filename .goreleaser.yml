@@ -70,6 +70,7 @@ brews:
     repository:
       owner: Aknirex
       name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     commit_author:
       name: md2docx-bot
       email: bot@md2docx.dev
