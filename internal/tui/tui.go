@@ -30,12 +30,15 @@ const (
 )
 
 var (
-	titleStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#7C3AED")).MarginBottom(1)
-	helpStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("#6B7280")).MarginTop(1)
-	errorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#EF4444"))
-	successStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#22C55E"))
-	labelStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("#6B7280"))
-	valueStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("#F3F4F6"))
+	titleStyle    = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#7C3AED")).MarginBottom(1)
+	helpStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("#6B7280")).MarginTop(1)
+	errorStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("#EF4444"))
+	successStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("#22C55E"))
+	labelStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("#6B7280"))
+	valueStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("#F3F4F6"))
+	breadcrumbSep = lipgloss.NewStyle().Foreground(lipgloss.Color("#6B7280")).Padding(0, 1)
+	breadcrumbCur = lipgloss.NewStyle().Foreground(lipgloss.Color("#7C3AED")).Bold(true)
+	breadcrumbDir = lipgloss.NewStyle().Foreground(lipgloss.Color("#60A5FA")).Underline(true)
 )
 
 type Model struct {
@@ -137,6 +140,44 @@ func presetCursorForLang(lang i18n.Lang) int {
 	return len(presets) - 1 // default
 }
 
+func renderBreadcrumb(dir string) string {
+	abs, err := filepath.Abs(dir)
+	if err != nil {
+		abs = dir
+	}
+	parts := strings.Split(filepath.ToSlash(abs), "/")
+	if len(parts) == 0 {
+		return abs
+	}
+
+	var b strings.Builder
+	for i, part := range parts {
+		if part == "" {
+			if i == 0 {
+				b.WriteString(breadcrumbCur.Render("/"))
+			}
+			continue
+		}
+		if i > 0 && !(i == 1 && parts[0] == "") {
+			b.WriteString(breadcrumbSep.Render(">"))
+		}
+		if i == len(parts)-1 {
+			b.WriteString(breadcrumbCur.Render(part))
+		} else {
+			b.WriteString(breadcrumbDir.Render(part))
+		}
+	}
+	return b.String()
+}
+
+func parentDir(dir string) string {
+	parent := filepath.Dir(dir)
+	if parent == dir {
+		return dir
+	}
+	return parent
+}
+
 func (m Model) Init() tea.Cmd {
 	return tea.Batch(m.inputPicker.Init(), textinput.Blink)
 }
@@ -201,15 +242,27 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// Delegate to active pickers
 	switch m.step {
 	case stepSelectInput:
+		if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.String() == "backspace" {
+			m.inputPicker.CurrentDirectory = parentDir(m.inputPicker.CurrentDirectory)
+			return m, nil
+		}
 		var cmd tea.Cmd
 		m.inputPicker, cmd = m.inputPicker.Update(msg)
 		return m, cmd
 	case stepSelectOutput:
+		if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.String() == "backspace" {
+			m.outputPicker.CurrentDirectory = parentDir(m.outputPicker.CurrentDirectory)
+			return m, nil
+		}
 		var cmd tea.Cmd
 		m.outputPicker, cmd = m.outputPicker.Update(msg)
 		m.outputInput, _ = m.outputInput.Update(msg)
 		return m, cmd
 	case stepSelectStyleFile:
+		if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.String() == "backspace" {
+			m.stylePicker.CurrentDirectory = parentDir(m.stylePicker.CurrentDirectory)
+			return m, nil
+		}
 		var cmd tea.Cmd
 		m.stylePicker, cmd = m.stylePicker.Update(msg)
 		return m, cmd
@@ -453,16 +506,20 @@ func (m Model) View() string {
 }
 
 func (m Model) viewInput() string {
+	bc := renderBreadcrumb(m.inputPicker.CurrentDirectory)
 	return lipgloss.JoinVertical(lipgloss.Left,
 		titleStyle.Render(i18n.T(m.lang, "tui_input_title")),
+		bc,
 		m.inputPicker.View(),
 		helpStyle.Render(i18n.T(m.lang, "tui_nav_quit")),
 	)
 }
 
 func (m Model) viewOutput() string {
+	bc := renderBreadcrumb(m.outputPicker.CurrentDirectory)
 	return lipgloss.JoinVertical(lipgloss.Left,
 		titleStyle.Render(i18n.T(m.lang, "tui_output_title")),
+		bc,
 		labelStyle.Render(i18n.T(m.lang, "tui_filename_label")+": ")+m.outputInput.View(),
 		"",
 		m.outputPicker.View(),
@@ -499,8 +556,10 @@ func (m Model) viewStyleList() string {
 }
 
 func (m Model) viewStyleFile() string {
+	bc := renderBreadcrumb(m.stylePicker.CurrentDirectory)
 	return lipgloss.JoinVertical(lipgloss.Left,
 		titleStyle.Render(i18n.T(m.lang, "tui_style_file_title")),
+		bc,
 		m.stylePicker.View(),
 		helpStyle.Render(i18n.T(m.lang, "tui_nav_help")),
 	)
