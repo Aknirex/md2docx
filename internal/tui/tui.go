@@ -269,7 +269,7 @@ func (m Model) viewLang() string {
 
 func (m Model) updateInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if msg.String() == "enter" {
-		if path, err := m.inputPicker.DidSelectFile(msg); err == nil {
+		if selected, path := m.inputPicker.DidSelectFile(msg); selected {
 			m.inputPath = path
 			m.step = stepSelectOutput
 			base := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
@@ -336,7 +336,7 @@ func (m Model) updateStyle(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 func (m Model) updateStyleFile(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if msg.String() == "enter" {
-		if path, err := m.stylePicker.DidSelectFile(msg); err == nil {
+		if selected, path := m.stylePicker.DidSelectFile(msg); selected {
 			m.styleSource = "file:" + path
 			m.styleSourceStr = "File: " + filepath.Base(path)
 			m.goToConfirm()

@@ -82,7 +82,7 @@ func PresetDescriptions() map[string]string {
 	return map[string]string{
 		PresetUSBusiness: "US Business – Calibri/Cambria, professional serif headings, blue accent",
 		PresetUSModern:   "US Modern – Clean sans-serif, dark tones, minimal",
-		PresetCNOfficial: "CN Official – SimSun/SimHei (公文风格), Chinese official document style",
+		PresetCNOfficial: "CN Official – 小标宋_GBK/仿宋_GB2312/楷体_GB2312 (公文风格), Chinese official document style",
 		PresetCNModern:   "CN Modern – Noto Sans SC, modern Chinese typography",
 		PresetJPFormal:   "JP Formal – Yu Gothic/Mincho, Japanese business document style",
 		PresetEUClean:    "EU Clean – Helvetica/Arial, European minimalist design",
