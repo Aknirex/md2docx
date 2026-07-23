@@ -65,6 +65,18 @@ changelog:
       - Merge pull request
       - Merge branch
 
+brews:
+  - name: md2docx
+    repository:
+      owner: Aknirex
+      name: homebrew-tap
+    commit_author:
+      name: md2docx-bot
+      email: bot@md2docx.dev
+    homepage: "https://github.com/Aknirex/md2docx"
+    description: "Convert Markdown to professional DOCX documents with region-specific styles"
+    license: "MIT"
+
 nfpms:
   - id: md2docx
     package_name: md2docx
