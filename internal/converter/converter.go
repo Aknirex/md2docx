@@ -32,18 +32,6 @@ var mermaidFenceRE = regexp.MustCompile(`^\s*\x60{3,}\s*mermaid\s*$`)
 // inlineMarkupRE matches inline bold, italic, and code spans.
 var inlineMarkupRE = regexp.MustCompile(`(\*\*.+?\*\*|\x60[^\x60]+\x60|\*[^*\n]+\*|_[^_\n]+_)`)
 
-// inlineCodeRE matches inline code
-var inlineCodeRE = regexp.MustCompile(`^\x60([^\x60]+)\x60$`)
-
-// boldRE matches **bold**
-var boldRE = regexp.MustCompile(`^\*\*(.+?)\*\*$`)
-
-// italicAsteriskRE matches *italic*
-var italicAsteriskRE = regexp.MustCompile(`^\*(.+?)\*$`)
-
-// italicUnderscoreRE matches _italic_
-var italicUnderscoreRE = regexp.MustCompile(`^_(.+?)_$`)
-
 // mermaidBlock holds a collected mermaid diagram.
 type mermaidBlock struct {
 	diagram string
@@ -69,13 +57,16 @@ func convertInlineMarkdown(text string, st *StyleTemplate) string {
 		value := text[m[0]:m[1]]
 
 		switch {
-		case inlineCodeRE.MatchString(value):
-			inner := inlineCodeRE.FindStringSubmatch(value)[1]
+		case len(value) > 1 && value[0] == '`':
+			inner := value[1 : len(value)-1]
 			runs.WriteString(runXML(inner, st.CodeFont, st.CodeSize, st.TextColor, false, false, true))
-		case boldRE.MatchString(value):
-			inner := boldRE.FindStringSubmatch(value)[1]
+		case len(value) > 3 && value[0] == '*' && value[1] == '*':
+			inner := value[2 : len(value)-2]
 			runs.WriteString(runXML(inner, st.BodyFont, st.BodySize, st.TextColor, true, false, false))
-		case italicAsteriskRE.MatchString(value), italicUnderscoreRE.MatchString(value):
+		case len(value) > 1 && value[0] == '*':
+			inner := value[1 : len(value)-1]
+			runs.WriteString(runXML(inner, st.BodyFont, st.BodySize, st.TextColor, false, true, false))
+		case len(value) > 1 && value[0] == '_':
 			inner := value[1 : len(value)-1]
 			runs.WriteString(runXML(inner, st.BodyFont, st.BodySize, st.TextColor, false, true, false))
 		default:
@@ -101,6 +92,7 @@ func parseMarkdown(markdown string, st *StyleTemplate, enableMermaid bool) *pars
 	var mermaidBuf strings.Builder
 
 	scanner := bufio.NewScanner(strings.NewReader(markdown))
+	scanner.Buffer(make([]byte, 0, 1024*1024), 1024*1024) // 1MB max line length
 	for scanner.Scan() {
 		line := scanner.Text()
 
@@ -262,29 +254,23 @@ func ConvertMarkdownToBytes(markdown string, st *StyleTemplate, opts ...Conversi
 		}
 		// Replace failed placeholders with code paragraphs
 		for i, p := range result.paragraphs {
-			if strings.HasPrefix(p, "<w:p><!--MERMAID:") {
-				rest := strings.TrimPrefix(p, "<w:p><!--MERMAID:")
-				end := strings.Index(rest, "-->")
-				if end > 0 {
-					var idx int
-					fmt.Sscanf(rest[:end], "%d", &idx)
-					if !rendered[idx] {
-						// Find the original mermaid source
-						for _, block := range result.mermaidBlocks {
-							if block.index == idx {
-								// Render as a code block with language label
-								lines := strings.Split(strings.TrimSpace(block.diagram), "\n")
-								var codeParas []string
-								// Add a label line
+			if idx, ok := parseMermaidPlaceholder(p); ok {
+				if !rendered[idx] {
+					// Find the original mermaid source
+					for _, block := range result.mermaidBlocks {
+						if block.index == idx {
+							// Render as a code block with language label
+							lines := strings.Split(strings.TrimSpace(block.diagram), "\n")
+							var codeParas []string
+							// Add a label line
+							codeParas = append(codeParas,
+								paragraphXML(runXML("mermaid", cfg.Style.CodeFont, cfg.Style.CodeSize, cfg.Style.AccentColor, true, false, true), "CodeBlock", 0))
+							for _, line := range lines {
 								codeParas = append(codeParas,
-									paragraphXML(runXML("mermaid", cfg.Style.CodeFont, cfg.Style.CodeSize, cfg.Style.AccentColor, true, false, true), "CodeBlock", 0))
-								for _, line := range lines {
-									codeParas = append(codeParas,
-										paragraphXML(runXML(line, cfg.Style.CodeFont, cfg.Style.CodeSize, cfg.Style.TextColor, false, false, true), "CodeBlock", 0))
-								}
-								result.paragraphs[i] = strings.Join(codeParas, "")
-								break
+									paragraphXML(runXML(line, cfg.Style.CodeFont, cfg.Style.CodeSize, cfg.Style.TextColor, false, false, true), "CodeBlock", 0))
 							}
+							result.paragraphs[i] = strings.Join(codeParas, "")
+							break
 						}
 					}
 				}

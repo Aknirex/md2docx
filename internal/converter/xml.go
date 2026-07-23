@@ -86,6 +86,25 @@ func mermaidPlaceholder(index int) string {
 	return fmt.Sprintf(`<w:p><!--MERMAID:%d--></w:p>`, index)
 }
 
+// parseMermaidPlaceholder extracts the mermaid diagram index from a placeholder paragraph.
+// Returns the index and true if the paragraph is a mermaid placeholder, or 0 and false otherwise.
+func parseMermaidPlaceholder(p string) (int, bool) {
+	const prefix = "<w:p><!--MERMAID:"
+	if !strings.HasPrefix(p, prefix) {
+		return 0, false
+	}
+	rest := p[len(prefix):]
+	end := strings.Index(rest, "-->")
+	if end <= 0 {
+		return 0, false
+	}
+	var idx int
+	if _, err := fmt.Sscanf(rest[:end], "%d", &idx); err != nil {
+		return 0, false
+	}
+	return idx, true
+}
+
 // drawingXML generates a <w:drawing> paragraph for an embedded image.
 // rID is the relationship ID in word/_rels/document.xml.rels (e.g., "rId3").
 // widthEMU and heightEMU are in English Metric Units (1 inch = 914400 EMU).
@@ -155,20 +174,11 @@ func documentXML(paragraphs []string, marginInches float64, mermaidImages []Merm
 
 	// Build paragraphs, replacing placeholders
 	var parts []string
-	placeholderPrefix := "<!--MERMAID:"
 	for _, p := range paragraphs {
-		if strings.HasPrefix(p, "<w:p><!--MERMAID:") {
-			// Extract the index from the placeholder comment
-			// Format: <w:p><!--MERMAID:N--></w:p>
-			rest := strings.TrimPrefix(p, "<w:p>"+placeholderPrefix)
-			end := strings.Index(rest, "-->")
-			if end > 0 {
-				var idx int
-				fmt.Sscanf(rest[:end], "%d", &idx)
-				if repl, ok := replacements[idx]; ok {
-					parts = append(parts, repl.xml)
-					continue
-				}
+		if idx, ok := parseMermaidPlaceholder(p); ok {
+			if repl, ok := replacements[idx]; ok {
+				parts = append(parts, repl.xml)
+				continue
 			}
 		}
 		parts = append(parts, p)

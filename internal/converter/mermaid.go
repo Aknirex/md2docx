@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"compress/flate"
 	"encoding/base64"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"image/png"
 	"io"
 	"net/http"
 	"os/exec"
@@ -71,7 +71,10 @@ func encodeMermaidInk(diagram string, theme string) string {
 			"theme": theme,
 		},
 	}
-	jsonBytes, _ := json.Marshal(payload)
+	jsonBytes, err := json.Marshal(payload)
+	if err != nil {
+		return ""
+	}
 
 	var buf bytes.Buffer
 	w, _ := flate.NewWriter(&buf, flate.BestCompression)
@@ -81,14 +84,28 @@ func encodeMermaidInk(diagram string, theme string) string {
 	return base64.RawURLEncoding.EncodeToString(buf.Bytes())
 }
 
-// readPNGDimensions reads the width and height from PNG bytes without full decoding.
+// readPNGDimensions reads width and height from PNG IHDR chunk without full decoding.
+// PNG format: 8-byte signature, then chunks of [4-byte length][4-byte type][data][4-byte CRC].
+// The IHDR chunk is always first and contains width (bytes 0-3) and height (bytes 4-7) as big-endian uint32.
 func readPNGDimensions(data []byte) (int, int, error) {
-	img, err := png.Decode(bytes.NewReader(data))
-	if err != nil {
-		return 0, 0, err
+	if len(data) < 24 {
+		return 0, 0, fmt.Errorf("png data too short: %d bytes", len(data))
 	}
-	bounds := img.Bounds()
-	return bounds.Dx(), bounds.Dy(), nil
+	// Verify PNG signature
+	if !bytes.Equal(data[:8], []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}) {
+		return 0, 0, fmt.Errorf("invalid png signature")
+	}
+	// IHDR chunk starts at offset 8: [4-byte length][4-byte "IHDR"]
+	chunkType := string(data[12:16])
+	if chunkType != "IHDR" {
+		return 0, 0, fmt.Errorf("expected IHDR chunk, got %q", chunkType)
+	}
+	width := binary.BigEndian.Uint32(data[16:20])
+	height := binary.BigEndian.Uint32(data[20:24])
+	if width == 0 || height == 0 {
+		return 0, 0, fmt.Errorf("invalid png dimensions: %dx%d", width, height)
+	}
+	return int(width), int(height), nil
 }
 
 // --- MermaidCLIRenderer: uses a local mermaid-cli (mmdc) installation ---
